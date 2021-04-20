@@ -21,13 +21,17 @@
 #ifndef PHP_WIN32
 #   include <stdlib.h>
 #   include <stdio.h>
-#   include <sys/sysinfo.h>
+#   ifdef __APPLE__
+#       include <sys/sysctl.h>
+#   else
+#       include <sys/sysinfo.h>
+#   endif
 #endif
 #include <php.h>
 
 #define ELASTIC_APM_CURRENT_LOG_CATEGORY ELASTIC_APM_LOG_CATEGORY_SYS_METRICS
 
-#ifdef PHP_WIN32
+#if defined PHP_WIN32 || defined __APPLE__
 
 static void fillDummyCpuReadingOnWindows( CpuMetricsReading* result )
 {
@@ -65,7 +69,7 @@ static void readCpuFromProcStat( const char* procStatFilePath, CpuMetricsReading
 
 void readSystemMetrics( SystemMetricsReading* systemMetricsReading )
 {
-#ifdef PHP_WIN32
+#if defined PHP_WIN32 || defined __APPLE__
     fillDummyCpuReadingOnWindows( &systemMetricsReading->machineCpuReading );
     fillDummyCpuReadingOnWindows( &systemMetricsReading->processCpuReading );
 #else
@@ -94,7 +98,7 @@ void getSystemMetrics( const SystemMetricsReading* startReading, const SystemMet
     result->machineCpu = calcCpuPercent( &startReading->machineCpuReading, &endReading->machineCpuReading );
     result->processCpu = calcCpuPercent( &startReading->processCpuReading, &endReading->processCpuReading );
 
-#ifdef PHP_WIN32
+#if defined PHP_WIN32 || defined __APPLE__
     result->machineMemoryTotal = 4ULL * 1024 * 1024 * 1024;
     result->machineMemoryFree = 1ULL * 1024 * 1024 * 1024;
 #else
